@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block content %}
+	{% if not current_user.is_authenticated %}
+	<body style="background-color:#85a5bc;">
+	 <div style="margin-left:auto;margin-right:auto;text-align:center">
+            <h1  style="font-size:175px;margin-top:150px;color:#deeffc;">Secloud</h1>
+	    <h4 style="margin-top:-30px;font-size:30px;color:#deeffc;"> Safe Secure Encrypted Cloud Storage</h4>
+	    <p style="margin-top:80px;font-size:27px;color:#deeffc;">Securely store your files on the cloud with encryption of files before they are uploaded to the system,
+	    insuring no one but you can access them. Manage your files easily and share them with other users. </p>
+	    <a href="/register" style="font-size:27px;color:#deeffc;text-decoration:none;font-weight: bold;">Join today and start using the cloud freely</a>
+          </div> 
+	</body>
+	{% else %}
+	  <h1>files go here</h1>
+	{% endif %}
+{% endblock content %}
