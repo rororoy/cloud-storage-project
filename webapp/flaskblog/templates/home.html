@@ -1,16 +1,47 @@
 {% extends "layout.html" %}
 {% block content %}
-	{% if not current_user.is_authenticated %}
-	<body style="background-color:#85a5bc;">
-	 <div style="margin-left:auto;margin-right:auto;text-align:center">
-            <h1  style="font-size:175px;margin-top:150px;color:#deeffc;">Secloud</h1>
-	    <h4 style="margin-top:-30px;font-size:30px;color:#deeffc;"> Safe Secure Encrypted Cloud Storage</h4>
-	    <p style="margin-top:80px;font-size:27px;color:#deeffc;">Securely store your files on the cloud with encryption of files before they are uploaded to the system,
-	    insuring no one but you can access them. Manage your files easily and share them with other users. </p>
-	    <a href="/register" style="font-size:27px;color:#deeffc;text-decoration:none;font-weight: bold;">Join today and start using the cloud freely</a>
-          </div> 
-	</body>
-	{% else %}
-	  <h1>files go here</h1>
-	{% endif %}
+{% if not current_user.is_authenticated %}
+<body style="background-color:#85a5bc;">
+   <div style="margin-left:auto;margin-right:auto;text-align:center">
+      <h1  style="font-size:175px;margin-top:150px;color:#deeffc;">Secloud</h1>
+      <h4 style="margin-top:-30px;font-size:30px;color:#deeffc;"> Safe Secure Encrypted Cloud Storage</h4>
+      <p style="margin-top:80px;font-size:27px;color:#deeffc;">Securely store your files on the cloud with encryption of files before they are uploaded to the system,
+         insuring no one but you can access them. Manage your files easily and share them with other users. 
+      </p>
+      <a href="/register" style="font-size:27px;color:#deeffc;text-decoration:none;font-weight: bold;">Join today and start using the cloud freely</a>
+   </div>
+</body>
+{% else %}
+<head>
+   <meta charset="UTF-8">
+</head>
+<main role="main" class="container">
+   <div class="row">
+      <div class="col-md-12">
+{% for user_file in files %}
+        <article class="media content-section">
+          <div class="media-body">
+            <div class="article-metadata">
+              <a class="mr-2" href="#">{{ user_file.owner.username }}</a>
+              <small class="text-muted">{{ user_file.date_modified.strftime('%Y-%m-%d') }}</small>
+            </div>
+            <p class="article-content">{{ user_file.filename.replace(current_user.username, '') }}</p>
+          </div>
+        </article>
+    {% endfor %}	
+      </div>
+
+	 <div class="col-md-2" style="z-index: 10; position: fixed; right: 79%; top: 11%;">
+          <div id="sidebarmenu" name="sidebarmenu"class="content-section">
+              <ul class="list-group">
+                <a href="/home" style="text-decoration: none;"><li class="list-group-item list-group-item-light">My Files</li></a>
+                <a href="/shares" style="text-decoration: none;"><li class="list-group-item list-group-item-light">Shared Files</li></a>
+                <a href="/upload" style="text-decoration: none;"><li class="list-group-item list-group-item-light">Upload</li></a>
+              </ul>
+          </div>
+        </div>
+      </div>
+   </div>
+</main>
+{% endif %}
 {% endblock content %}

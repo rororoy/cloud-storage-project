@@ -67,3 +67,7 @@ class UpdateAccountCredsForm(FlaskForm):
             if email:
                 raise ValidationError('This email is already registered')
 
+
+class UploadForm(FlaskForm):
+    password = PasswordField('',  validators=[DataRequired(), Length(min=8, max=32, message='Password length should be between 8 characters and 32.')])
+    submit = SubmitField('Submit')

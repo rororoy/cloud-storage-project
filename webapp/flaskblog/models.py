@@ -26,6 +26,6 @@ class Files(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def __repr__(self):
-        return f"Files('{self.filename}', '{self.shares}', '{self.owner}', '{self.date_modified}')"
+        return f"Files('{self.filename}', '{self.shares}', '{self.owner_id}', '{self.date_modified}')"
 
 
