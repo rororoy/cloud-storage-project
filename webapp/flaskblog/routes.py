@@ -1,21 +1,49 @@
-from flask import render_template, url_for, flash, redirect, flash, request
+from flask import render_template, url_for, flash, redirect, flash, request, Response, send_from_directory
 from flaskblog import app, db, bcrypt
 from flaskblog.models import User, Files
-from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountCredsForm, UploadForm
+from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountCredsForm, UploadForm, FileOptionsForm
 from flask_login import login_user, current_user, logout_user, login_required
 import os
 from flaskblog import app_utils
 from time import sleep
 from datetime import datetime
+import magic
 
 temp_file = None
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/home", methods=['GET', 'POST'])
 def home():
-    files = Files.query.all()
-    return render_template('home.html', title='My Files', files=files) 
+    form = FileOptionsForm()
+    if form.validate_on_submit():
+        if request.form.get('submit_download') == 'Enter':
+            # Pass the users' entered password and the filename that is
+            # passed using an additional field. [[ form.helper_field.data is filename ]]
+            decrypted_file = app_utils.file_decryption(form.helper_field.data, form.input_field.data)
+            # TODO SEE WHY WHEN STREAMED THE FILE CORRUPTS BUT IS SAVED WELL POSSIBLY CHUNK PROBLEM
+            #TODO GET BETTER MIME FUNCTION
+            # chunk_size=512
+            # chunks = [decrypted_file[i:i+chunk_size] for i in range(0, len(decrypted_file), chunk_size)]
+            # mime = magic.Magic(mime=True)
+            # file_mimetype = mime.from_file(app.config['TEMPO_STORAGE'] + form.helper_field.data) # 'application/pdf'
+            # file_mimetype = app_utils.mime_content_type(form.helper_field.data)
+            # return Response(app_utils.generate_file_chunks(chunks), mimetype=file_mimetype)
+            print(os.path.realpath(__file__))
+            return send_from_directory(directory="../" + app.config['UPLOAD_FOLDER'], filename=form.helper_field.data)
+        elif request.form.get('submit_share') == 'Submit':
+            print('Share')
+        elif request.form.get('submit_delete') == 'Confirm':
+            print('Delete')
+        else:
+            print('Invalid')
+    # print(form.errors)
 
+    if current_user.is_authenticated:
+        users = User.query.filter_by(username=current_user.username).first()
+        files = Files.query.filter_by(owner=users).order_by(Files.date_modified.desc())
+        return render_template('home.html', title='My Files', files=files, form=form)
+
+    return render_template('home.html', title='Home', form=form)
 
 @app.route("/upload", methods=['GET', 'POST'])
 @login_required
@@ -34,7 +62,7 @@ def upload():
             temp_file = app_utils.check_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], temp_file))
             return render_template('upload.html', title='Upload', form=form, password_request="True")
-    return render_template('upload.html', title='Upload', form=form, password_request="False") 
+    return render_template('upload.html', title='Upload', form=form, password_request="False")
 
 @app.route("/uploadendpoint", methods=['GET', 'POST'])
 @login_required
@@ -44,8 +72,9 @@ def uploadendpoint():
     form = UploadForm()
     # When submited
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        app_utils.file_encryption(temp_file, hashed_password)
+        # hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        # app_utils.file_encryption(temp_file, hashed_password)
+        app_utils.file_encryption(temp_file, form.password.data)
         # Remove temp file after encryption is done and the real final file is stored
         os.remove(os.path.join(app.config['UPLOAD_FOLDER'], temp_file))
         temp_file = current_user.username + temp_file
@@ -53,12 +82,13 @@ def uploadendpoint():
         db.session.add(new_file)
         db.session.commit()
         return redirect(url_for('home'))
-    return render_template('upload.html', title='Upload', form=form, password_request="True") 
+    return render_template('upload.html', title='Upload', form=form, password_request="True")
 
 @app.route("/shares")
 @login_required
 def shares():
-    return redirect(url_for('home'))
+    files = Files.query.all()
+    return render_template('shares.html', form=UploadForm())
 
 @app.route("/about")
 def about():
@@ -80,7 +110,7 @@ def login():
             return redirect(prev_page) if prev_page else redirect(url_for('home'))
         else:
             flash('Login Unsuccessful. Please check username and password', 'danger')
-    return render_template('login.html', title='Login', form=form)  
+    return render_template('login.html', title='Login', form=form)
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():

@@ -9,11 +9,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .bg-steel {
-  background-color: #5f788a;
+  background-color: #5984a0;
 }
 
 .site-header .navbar-nav .nav-link {
-  color: #cbd5db;
+  color: #d7e3ea;
 }
 
 .site-header .navbar-nav .nav-link:hover {
@@ -116,4 +116,61 @@ a.article-title:hover {
   color: #000;
   text-decoration: none;
   cursor: pointer;
+}
+
+.file-square-image{
+  width:135px;
+  height:135px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 10%;
+}
+
+.file-button{
+  background: none!important;
+  border: none;
+  padding: 0!important;
+  cursor: pointer;
+}
+
+#file-cell:hover,
+#file-cell:focus {
+  background: #f4f2f2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#delete-button{
+  color:#bf6363;
+  border-color:#bf6363;
+}
+
+#delete-button:hover,
+#delete-button:focus{
+  color:#FFFFFF;
+  background-color: #bf6363;
+  border-color:#bf6363;
+}
+
+#input_field{
+  margin:5px;
+  display:none;
+  width:100%;
+}
+
+#input_submit_download, #input_submit_share , #input_submit_delete {
+  display:none;
+  float: right;
+  margin-top: 11px;
+  color:#60a56e;
+  border-color:#60a56e;
+}
+
+#input_submit_download:hover,
+#input_submit_share:hover ,
+#input_submit_delete:hover {
+  color:#FFFFFF;
+  background-color: #60a56e;
+  border-color:#60a56e;
 }

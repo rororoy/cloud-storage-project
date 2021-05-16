@@ -1,87 +1,101 @@
+
+
 {% extends "layout.html" %}
 {% block content %}
 <head>
     <meta charset="UTF-8">
     {{ dropzone.load_css() }}
 </head>
-<body onload="popUpForm()">
-	      <div class="row">
-	
-	 <div class="col-md-2" style="z-index: 10; position: fixed; right: 79%; top: 11%;">
-          <div id="sidebarmenu" name="sidebarmenu"class="content-section">
-              <ul class="list-group">
-                <a href="/home" style="text-decoration: none;"><li class="list-group-item list-group-item-light">My Files</li></a>
-                <a href="/shares" style="text-decoration: none;"><li class="list-group-item list-group-item-light">Shared Files</li></a>
-                <a href="/upload" style="text-decoration: none;"><li class="list-group-item list-group-item-light">Upload</li></a>
-              </ul>
-          </div>
+<body  onload="popUpForm()">
+    <main role="main" class="container" style="margin-top:10%;">
+        <div class="row">
+            <div class="col-md-8">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+                <div class="col-md-12" style="padding-left:40px">
+                    <p style="margin-top: 5px;">Upload your file to the cloud storage system. All files get encrypted with a password before they are stored and the password is only known by you and is not stored anywhere.</p>
+                    {{ dropzone.create(action='upload') }}
+                    {{ dropzone.load_js() }}
+                    {{ dropzone.config(redirect_url=url_for('uploadendpoint')) }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="content-section">
+                    <ul class="list-group">
+                        <a href="/home" style="text-decoration:none;">
+                            <li class="list-group-item list-group-item-light">My Files</li>
+                        </a>
+                        <a href="/shares" style="text-decoration:none;">
+                            <li class="list-group-item list-group-item-light">Shared Files</li>
+                        </a>
+                        <a href="/upload" style="text-decoration: none;">
+                            <li class="list-group-item list-group-item-light">Upload</li>
+                        </a>
+                    </ul>
+                </div>
+            </div>
         </div>
-	</div>
-            <div class="col-md-12" style="padding-left:40px">
-		<p style="margin-top: 5px;">Upload your file to the cloud storage system. All files get encrypted with a password before they are stored and the password is only known by you and is not stored anywhere.</p>
-                {{ dropzone.create(action='upload') }}
-                {{ dropzone.load_js() }}
-                {{ dropzone.config(redirect_url=url_for('uploadendpoint')) }}
-	    </div>
-                <!-- The Modal -->
-                <div id="myModal" class="modal">
-                    <!-- Modal content -->
-                    <div class="modal-content" style="width:50%;">
-                        <span class="close">&times;</span>
-                        <div class="content-section">
-                            <form method="POST" action="">
-                                {{ form.hidden_tag() }}
-                                <fieldset class="form-group">
-                                    <legend class="border-bottom mb-4">Upload complete enter file password to encrypt</legend>
-                                    <div class="form-group">
-                                        {{ form.password.label(class="form-control-label") }}
-                                        {% if form.password.errors %}
-                                        {{ form.password(class="form-control form-control-lg is-invalid") }}
-                                        <div class="invalid-feedback">
-                                            {% for error in form.password.errors %}
-                                            <span>{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                        {% else %}
-                                        {{ form.password(class="form-control form-control-lg") }}
-                                        {% endif %}
-                                    </div>
-                                </fieldset>
-                                <div class="form-group">
-                                    {{ form.submit(class="btn btn-outline-info") }}
-                                </div>
-                            </form>
+        <div id="myModal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content" style="width:50%;">
+            <span class="close">&times;</span>
+            <div class="content-section">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <fieldset class="form-group">
+                        <legend class="border-bottom mb-4">Upload complete enter file password to encrypt</legend>
+                        <div class="form-group">
+                            {{ form.password.label(class="form-control-label") }}
+                            {% if form.password.errors %}
+                            {{ form.password(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.password.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            {{ form.password(class="form-control form-control-lg") }}
+                            {% endif %}
                         </div>
+                    </fieldset>
+                    <div class="form-group">
+                        {{ form.submit(class="btn btn-outline-info") }}
                     </div>
-              
-  </div>
-</div>
-	</div>	
-        <script>
-            // Get the modal
-            var modal = document.getElementById("myModal");
-            
-            // Get the button that opens the modal
-            var btn = document.getElementById("myBtn");
-            
-            // Get the <span> element that closes the modal
-            var span = document.getElementsByClassName("close")[0];
-            
-            // When the user clicks the button, open the modal 
-            function popUpForm() {
+                </form>
+            </div>
+        </div>
+        </div>
+    </main>
+    <script>
+        // Get the modal
+        var modal = document.getElementById("myModal");
 
-            		if ("{{ password_request }}" == "True"){
-              modal.style.display = "block";
-			document.getElementById("sidebarmenu").style.visibility="hidden";
-            			}
-            }
-            
-            // When the user clicks anywhere outside of the modal, close it
-            window.onclick = function(event) {
-              if (event.target == modal) {
-              
-			      window.location.replace('/upload')}
-            }
-        </script>
+        // Get the button that opens the modal
+        var btn = document.getElementById("myBtn");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks the button, open the modal
+        function popUpForm() {
+                if ("{{ password_request }}" == "True"){
+                  modal.style.display = "block";
+                    }
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+          if (event.target == modal) {
+
+              window.location.replace('/upload')}
+        }
+    </script>
 </body>
 {% endblock content %}

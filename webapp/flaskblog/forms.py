@@ -13,7 +13,7 @@ class PasswordStrength(object):
 
     def __call__(self, form, field):
         password = field.data
-        regex = re.compile('[@_!#$%^&*()<>?/\|}{~:]') 
+        regex = re.compile('[@_!#$%^&*()<>?/\|}{~:]')
         if regex.search(password) != None and any(chr.isdigit() for chr in password) and any(x.isupper() for x in password):
         	pass
         else:
@@ -26,12 +26,12 @@ class RegistrationForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=32, message='Password length should be between 8 characters and 32.'), PasswordStrength()])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Sign Up')
-    
+
 
 	# Costum validators to check if fields are free to use
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
-        
+
         # If user isnt None
         if user:
             raise ValidationError('This username is already taken')
@@ -51,7 +51,7 @@ class UpdateAccountCredsForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=16), Regexp('^\w+$', message="Username must contain only letters numbers or underscore")])
     email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Update')
-    
+
 
 	# Costum validators to check if fields are free to use
     def validate_username(self, username):
@@ -71,3 +71,10 @@ class UpdateAccountCredsForm(FlaskForm):
 class UploadForm(FlaskForm):
     password = PasswordField('',  validators=[DataRequired(), Length(min=8, max=32, message='Password length should be between 8 characters and 32.')])
     submit = SubmitField('Submit')
+
+class FileOptionsForm(FlaskForm):
+    helper_field = StringField('Helper')
+    input_field = StringField('Field', validators=[DataRequired()])
+    submit_download = SubmitField('Download')
+    submit_share = SubmitField('Share')
+    submit_delete = SubmitField('Delete')
