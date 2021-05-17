@@ -49,9 +49,15 @@
       {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
               {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                  {{ message }}
-                </div>
+              {% if category == 'file-deleted' or category == 'file-share' %}
+                  <div class="alert alert-success" style="margin-bottom:-90px;">
+                    {{ message }}
+                  </div>
+              {% else %}
+                  <div class="alert alert-{{ category }}">
+                    {{ message }}
+                  </div>
+              {% endif %}
               {% endfor %}
             {% endif %}
           {% endwith %}

@@ -14,6 +14,11 @@ temp_file = None
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/home", methods=['GET', 'POST'])
 def home():
+    # dict.session.pop('_flashes', None)
+    if str(request.args.get("message")) == 'filedel':
+        flash('Your file has been deleted', 'file-deleted')
+    elif str(request.args.get("message")) == 'fileshare':
+        flash('Your file has been shared', 'file-share')
     form = FileOptionsForm()
     if form.validate_on_submit():
         if request.form.get('submit_download') == 'Enter':
@@ -28,22 +33,53 @@ def home():
             # file_mimetype = mime.from_file(app.config['TEMPO_STORAGE'] + form.helper_field.data) # 'application/pdf'
             # file_mimetype = app_utils.mime_content_type(form.helper_field.data)
             # return Response(app_utils.generate_file_chunks(chunks), mimetype=file_mimetype)
-            print(os.path.realpath(__file__))
-            return send_from_directory(directory="../" + app.config['UPLOAD_FOLDER'], filename=form.helper_field.data)
+
+            # TODO FILES STAYS IN THE TEMPORARY STORAGE. ACTUALLY STREAMING NEEDS FIXING
+            return send_from_directory(directory="../" + app.config['UPLOAD_FOLDER'], filename=form.helper_field.data, as_attachment=True)
+
         elif request.form.get('submit_share') == 'Submit':
-            print('Share')
+            exists = db.session.query(db.exists().where(User.username == form.input_field.data)).scalar()
+            if exists:
+                # Get requested file
+                requested_file = Files.query.filter_by(filename=(current_user.username + form.helper_field.data)).first()
+                requested_file.shares = requested_file.shares + '|' +  form.input_field.data
+                db.session.commit()
+                return redirect(url_for('redirection', message="fileshare"))
+            else:
+                flash('User not found', 'danger')
+
         elif request.form.get('submit_delete') == 'Confirm':
-            print('Delete')
+            print(form.input_field.data, form.helper_field.data)
+            if form.helper_field.data == form.input_field.data:
+                # Get requested file
+                users = User.query.filter_by(username=current_user.username).first()
+                requested_file = Files.query.filter_by(filename=(current_user.username + form.input_field.data)).first()
+
+                db.session.delete(requested_file)
+                db.session.commit()
+                os.remove(os.path.join(app.config['TEMPO_STORAGE'], form.helper_field.data))
+                return redirect(url_for('redirection', message="filedel"))
+                # flash('Your file has been deleted', 'success')
+            else:
+                flash('File name does not match', 'danger')
+
         else:
             print('Invalid')
-    # print(form.errors)
 
     if current_user.is_authenticated:
         users = User.query.filter_by(username=current_user.username).first()
         files = Files.query.filter_by(owner=users).order_by(Files.date_modified.desc())
+        print('FILES')
+        print(files)
         return render_template('home.html', title='My Files', files=files, form=form)
 
     return render_template('home.html', title='Home', form=form)
+
+@app.route("/redirection", methods=['GET', 'POST'])
+@login_required
+def redirection():
+    message = str(request.args.get("message"))
+    return redirect(url_for('home', message=message))
 
 @app.route("/upload", methods=['GET', 'POST'])
 @login_required

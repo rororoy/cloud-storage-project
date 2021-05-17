@@ -21,7 +21,7 @@
             <table style="width:100%">
               <tr>
               {% set count = namespace(value=0) %}
-              {% for temp_file  in files %}
+              {% for temp_file in files %}
                 {% if count.value % 4 == 0 %}
                 </tr>
                 <tr>
@@ -42,6 +42,11 @@
               {% endfor %}
               </tr>
             </table>
+            {% if count.value == 0 %}
+              <div class="oopsmessage" style="text-align:cetner;">
+                <h3 style="color:#a8a8a8;">Oops it seems as you havent uploaded any files yet</h3>
+              </div>
+            {% endif %}
 
         </div>
         <div class="col-md-4">
@@ -84,10 +89,21 @@
                       use the correct password</b></small>
                     <br>
                     {{ form.submit_download(class="btn btn-outline-info", value="Enter", id="input_submit_download") }}
-                    {{ form.submit_download(class="btn btn-outline-info", value="Submit", id="input_submit_share") }}
-                    {{ form.submit_download(class="btn btn-outline-info", value="Confirm", id="input_submit_delete") }}
+                    {{ form.submit_share(class="btn btn-outline-info", value="Submit", id="input_submit_share") }}
+                    {{ form.submit_delete(class="btn btn-outline-info", value="Confirm", id="input_submit_delete") }}
+
                     <div style="overflow: hidden; padding-right: .5em;">
+                      
+                      {% if form.input_field.errors %}
+                      {{ form.input_field(class="form-control form-control-lg is-invalid", id="input_field") }}
+                      <div class="invalid-feedback">
+                          {% for error in form.password.errors %}
+                          <span>{{ error }}</span>
+                          {% endfor %}
+                      </div>
+                      {% else %}
                       {{ form.input_field(class="form-control form-control-lg", id="input_field") }}
+                      {% endif %}
                     </div>
                   </div>
               </fieldset>
@@ -128,10 +144,10 @@
       document.getElementById("input_submit_share").style.display = "none";
       document.getElementById("input_submit_delete").style.display = "none";
       document.getElementById("download_prompt").style.display = "none";
+      document.getElementById("input_field").value = "";
       if(pressedButton == "download"){
         document.getElementById("input_field").placeholder = "File password"
         document.getElementById("input_submit_download").style.display = "block";
-        document.getElementById("download_prompt").style.display = "block";
       }else if(pressedButton == "share"){
         document.getElementById("input_field").placeholder = "Enter friend's username"
         document.getElementById("input_submit_share").style.display = "block";

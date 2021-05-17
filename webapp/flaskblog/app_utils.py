@@ -21,7 +21,6 @@ def pad_file(file):
     return file
 
 def file_encryption(filename, password):
-    print('ENC PASS: ' + password)
     # The function encrypts the uploaded file with AES
     password = password.encode()
     key = hashlib.sha256(password).digest()
@@ -39,7 +38,6 @@ def file_encryption(filename, password):
         e.write(encrypted_file)
 
 def file_decryption(filename, password):
-    print('DEC PASS: ' + password)
     password = password.encode()
     key = hashlib.sha256(password).digest()
     mode = AES.MODE_CBC
