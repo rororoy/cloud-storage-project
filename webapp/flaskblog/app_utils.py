@@ -4,49 +4,61 @@ import hashlib
 from werkzeug.utils import secure_filename
 import os.path
 import os
-def check_filename(filename):
+import hashlib
+
+def check_filename(username, filename):
     # The function returns a name for the file that isnt already used in the temporary storage folder.
     # File name policy: duplicates will have a (1)/(2)/.. appended to them
     filename = secure_filename(filename)
     file_addition = ''
     counter = 0
-    while os.path.isfile(app.config['TEMPO_STORAGE'] + filename.split('.')[0] + file_addition + '.' + filename.split('.')[1]):
+    hashed_filename = hashlib.md5((username + filename.split('.')[0] + file_addition + '.' + filename.split('.')[1]).encode())
+    hashed_filename = str(hashed_filename.hexdigest()) + '.' + filename.split('.')[1]
+    true_filename = filename.split('.')[0] + file_addition + '.' + filename.split('.')[1]
+    while os.path.isfile(app.config['TEMPO_STORAGE'] + hashed_filename):
         counter += 1
         file_addition = '(' + str(counter) + ')'
-    return filename.split('.')[0] + file_addition + '.' +  filename.split('.')[1]
+        hashed_filename = hashlib.md5((username +  filename.split('.')[0] + file_addition + '.' + filename.split('.')[1]).encode())
+        hashed_filename = str(hashed_filename.hexdigest()) + '.' + filename.split('.')[1]
+        true_filename = filename.split('.')[0] + file_addition + '.' + filename.split('.')[1]
+    return hashed_filename, true_filename
 
 def pad_file(file):
     while len(file) % 16 != 0:
         file = file + b'0'
     return file
 
-def file_encryption(filename, password):
+def file_encryption(filename, filename_enc, password, username):
     # The function encrypts the uploaded file with AES
     password = password.encode()
     key = hashlib.sha256(password).digest()
     mode = AES.MODE_CBC
     IV = 'This is an IV016'.encode("utf8")
     cipher = AES.new(key, mode, IV)
-    with open(app.config['UPLOAD_FOLDER'] + filename, 'rb') as f:
+
+    with open(app.config['UPLOAD_FOLDER'] + filename_enc, 'rb') as f:
         original_file = f.read()
 
-        padded_file = pad_file(original_file)
+    padded_file = pad_file(original_file)
+    encrypted_file = cipher.encrypt(padded_file)
 
-        encrypted_file = cipher.encrypt(padded_file)
-
-    with open(app.config['TEMPO_STORAGE'] + filename, 'wb') as e:
+    with open(app.config['TEMPO_STORAGE'] + filename_enc, 'wb') as e:
         e.write(encrypted_file)
 
-def file_decryption(filename, password):
+def file_decryption(username, actual_filename, password):
     password = password.encode()
     key = hashlib.sha256(password).digest()
     mode = AES.MODE_CBC
     IV = 'This is an IV016'.encode("utf8")
     cipher = AES.new(key, mode, IV)
-    with open(app.config['TEMPO_STORAGE'] + filename, 'rb') as e:
+
+    hashed_filename = str(hashlib.md5((actual_filename).encode()).hexdigest())
+    hashed_filename = hashed_filename + '.' + actual_filename.split('.')[1]
+
+    with open(app.config['TEMPO_STORAGE'] + hashed_filename, 'rb') as e:
         encrypted_file = e.read()
 
-    with open(app.config['UPLOAD_FOLDER'] + filename, 'wb') as f:
+    with open(app.config['UPLOAD_FOLDER'] + actual_filename.replace(username, ''), 'wb') as f:
         f.write(cipher.decrypt(encrypted_file).rstrip(b'0'))
 
     return cipher.decrypt(encrypted_file).rstrip(b'0')

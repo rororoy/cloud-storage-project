@@ -1,4 +1,137 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1>shares</h1>
+
+<main role="main" class="container" style="margin-top:10%;">
+    <div class="row">
+        <div class="col-md-8">
+            <table style="width:100%">
+              <tr>
+              {% set count = namespace(value=0) %}
+              {% for temp_file in files %}
+                {% if count.value % 4 == 0 %}
+                </tr>
+                <tr>
+                {% endif %}
+                <td>
+                  <button class="file-button" onclick="popUpForm('{{ temp_file.filename.replace(current_user.username ,'') }}', '{{ usernames[count.value] }}')">
+                  <article class="media content-section" id="file-cell" name="file-cell" ><div class="media-body" style="margin-bottom:-5px;">
+                    <div class="article-metadata">
+                       <img class="file-square-image" src="{{ url_for('static', filename='sample.png') }}">
+                    </div>
+                    <div style="text-align: center; line-height:0.6;">{{ temp_file.filename.replace(current_user.username ,'') }}</div>
+                    <div style="text-align: center;"><small class="text-muted" id="username-field">Shared by: {{ usernames[count.value] }}</small></div>
+                  </div>
+                </article>
+                </button>
+              </td>
+                {% set count.value = count.value + 1 %}
+              {% endfor %}
+              </tr>
+            </table>
+            {% if count.value == 0 %}
+              <div class="oopsmessage" style="text-align:cetner;">
+                <h3 style="color:#a8a8a8;">Oops it seems as no one shared any files with you yet :(</h3>
+              </div>
+            {% endif %}
+
+        </div>
+        <div class="col-md-4">
+            <div class="content-section">
+                <ul class="list-group">
+                    <a href="/home" style="text-decoration:none;">
+                        <li class="list-group-item list-group-item-light">My Files</li>
+                    </a>
+                    <a href="/shares" style="text-decoration:none;">
+                        <li class="list-group-item list-group-item-light">Shared Files</li>
+                    </a>
+                    <a href="/upload" style="text-decoration: none;">
+                        <li class="list-group-item list-group-item-light">Upload</li>
+                    </a>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content" style="width:30%;">
+        <span class="close" onclick="xClick()">&times;</span>
+        <div class="content-section">
+          <form method="POST" action="">
+              {{ form.hidden_tag() }}
+              <fieldset class="form-group">
+                  <legend class="border-bottom mb-4" style="text-align:center;">
+                    <p id="filenameModal" style="margin-bottom:-10px; font-size:45px;"></p>
+                    <small class="text-muted" id="dateModal" style="font-size:15px;"></small>
+                  </legend>
+                  <div class="form-group" style="text-align:center;">
+                    <button class="btn btn-outline-info" onclick="buttonPopUp('download')", id="download-button">Download</button>
+                    <br>
+                    {{ form.helper_field(class="form-control form-control-lg", id="helper_field", style="display:none") }}
+                    <small class="text-muted", id="download_prompt", style="font-size:13px; display:none; margin-top:22px;">Since your file password is not stored or saved anywhere there is no way for the
+                      program to validate your password. This means that the file may be downloaded corrupted when encrypted with the wrong password.<br><b>Make sure you
+                      use the correct password</b></small>
+                    <br>
+                    {{ form.submit_download(class="btn btn-outline-info", value="Enter", id="input_submit_download") }}
+
+                    <div style="overflow: hidden; padding-right: .5em;">
+
+                      {% if form.input_field.errors %}
+                      {{ form.input_field(class="form-control form-control-lg is-invalid", id="input_field") }}
+                      <div class="invalid-feedback">
+                          {% for error in form.input_field.errors %}
+                          <span>{{ error }}</span>
+                          {% endfor %}
+                      </div>
+                      {% else %}
+                      {{ form.input_field(class="form-control form-control-lg", id="input_field") }}
+                      {% endif %}
+                    </div>
+                  </div>
+              </fieldset>
+              <div class="form-group">
+              </div>
+          </form>
+        </div>
+    </div>
+    </div>
+
+    </main>
+    <script>
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // Global variables that pass from the pop up form function into the helper field
+    var currentInspectedFIle = ""
+
+    // When the user clicks the button, open the modal
+    function popUpForm(filename, sharer) {
+      document.getElementById("myModal").style.display = "block";
+      document.getElementById("filenameModal").innerHTML  = filename;
+      document.getElementById("dateModal").innerHTML  = "Shared by: " + sharer;
+
+      currentInspectedFIle = sharer + filename
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    function xClick() {
+      document.getElementById("myModal").style.display = "none";
+    }
+
+    function buttonPopUp(pressedButton){
+      document.getElementById("input_submit_download").style.display = "none";
+      document.getElementById("download_prompt").style.display = "none";
+      document.getElementById("input_field").value = "";
+      if(pressedButton == "download"){
+        document.getElementById("input_field").placeholder = "File password"
+        document.getElementById("input_field").style.display = "block";
+        document.getElementById("input_submit_download").style.display = "block";
+      }
+      document.getElementById("helper_field").value = currentInspectedFIle;
+    }
+
+    </script>
 {% endblock content %}

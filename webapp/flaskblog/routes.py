@@ -10,6 +10,7 @@ from datetime import datetime
 import magic
 
 temp_file = None
+temp_file_enc = None
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/home", methods=['GET', 'POST'])
@@ -24,7 +25,7 @@ def home():
         if request.form.get('submit_download') == 'Enter':
             # Pass the users' entered password and the filename that is
             # passed using an additional field. [[ form.helper_field.data is filename ]]
-            decrypted_file = app_utils.file_decryption(form.helper_field.data, form.input_field.data)
+            decrypted_file = app_utils.file_decryption(current_user.username, current_user.username + form.helper_field.data, form.input_field.data)
             # TODO SEE WHY WHEN STREAMED THE FILE CORRUPTS BUT IS SAVED WELL POSSIBLY CHUNK PROBLEM
             #TODO GET BETTER MIME FUNCTION
             # chunk_size=512
@@ -37,14 +38,22 @@ def home():
             # TODO FILES STAYS IN THE TEMPORARY STORAGE. ACTUALLY STREAMING NEEDS FIXING
             return send_from_directory(directory="../" + app.config['UPLOAD_FOLDER'], filename=form.helper_field.data, as_attachment=True)
 
+        # CURRENTLY DISABLED
         elif request.form.get('submit_share') == 'Submit':
             exists = db.session.query(db.exists().where(User.username == form.input_field.data)).scalar()
             if exists:
                 # Get requested file
-                requested_file = Files.query.filter_by(filename=(current_user.username + form.helper_field.data)).first()
-                requested_file.shares = requested_file.shares + '|' +  form.input_field.data
+                #users = User.query.filter_by(username=current_user.username).first()
+                #requested_file = users.files.filter_by(filename=form.helper_field.data)
+                print('ID'+str(current_user.id))
+                requested_file = Files.query.filter_by(filename=form.helper_field.data, owner_id=current_user.id).first()
+                shared_with_user = User.query.filter_by(username=form.input_field.data).first()
+                requested_file.file_viewers.append(shared_with_user)
                 db.session.commit()
-                return redirect(url_for('redirection', message="fileshare"))
+                #db.session.commit()
+
+                # print(requested_file.filename)
+                pass
             else:
                 flash('User not found', 'danger')
 
@@ -53,11 +62,11 @@ def home():
             if form.helper_field.data == form.input_field.data:
                 # Get requested file
                 users = User.query.filter_by(username=current_user.username).first()
-                requested_file = Files.query.filter_by(filename=(current_user.username + form.input_field.data)).first()
+                requested_file = Files.query.filter_by(filename=form.input_field.data, owner_id=current_user.id).first()
 
                 db.session.delete(requested_file)
                 db.session.commit()
-                os.remove(os.path.join(app.config['TEMPO_STORAGE'], form.helper_field.data))
+                os.remove(os.path.join(app.config['TEMPO_STORAGE'], requested_file.actual_filename))
                 return redirect(url_for('redirection', message="filedel"))
                 # flash('Your file has been deleted', 'success')
             else:
@@ -67,10 +76,7 @@ def home():
             print('Invalid')
 
     if current_user.is_authenticated:
-        users = User.query.filter_by(username=current_user.username).first()
-        files = Files.query.filter_by(owner=users).order_by(Files.date_modified.desc())
-        print('FILES')
-        print(files)
+        files = Files.query.filter_by(owner_id=current_user.id).all()
         return render_template('home.html', title='My Files', files=files, form=form)
 
     return render_template('home.html', title='Home', form=form)
@@ -85,6 +91,7 @@ def redirection():
 @login_required
 def upload():
     global temp_file
+    global temp_file_enc
     form = RegistrationForm()
     if request.method == 'POST':
         # check if the post request has the file part
@@ -95,8 +102,11 @@ def upload():
         # if user does not select file, browser also
         # submit an empty part without filename
         if file:
-            temp_file = app_utils.check_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], temp_file))
+            temp_file_enc, temp_file = app_utils.check_filename(current_user.username, file.filename)
+            # temp_file = file.filename
+            print(temp_file_enc)
+
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], temp_file_enc))
             return render_template('upload.html', title='Upload', form=form, password_request="True")
     return render_template('upload.html', title='Upload', form=form, password_request="False")
 
@@ -104,27 +114,48 @@ def upload():
 @login_required
 def uploadendpoint():
     global temp_file
+    global temp_file_enc
     # Get the relevant form
     form = UploadForm()
     # When submited
     if form.validate_on_submit():
         # hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         # app_utils.file_encryption(temp_file, hashed_password)
-        app_utils.file_encryption(temp_file, form.password.data)
+        app_utils.file_encryption(temp_file, temp_file_enc, form.password.data, current_user.username)
         # Remove temp file after encryption is done and the real final file is stored
-        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], temp_file))
-        temp_file = current_user.username + temp_file
-        new_file = Files(filename=str(temp_file), shares='admin', owner=current_user)
+        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], temp_file_enc))
+
+        new_file = Files(filename=str(temp_file), actual_filename=temp_file_enc, owner=current_user)
         db.session.add(new_file)
         db.session.commit()
         return redirect(url_for('home'))
     return render_template('upload.html', title='Upload', form=form, password_request="True")
 
-@app.route("/shares")
+@app.route("/shares", methods=['GET', 'POST'])
 @login_required
 def shares():
-    files = Files.query.all()
-    return render_template('shares.html', form=UploadForm())
+    if str(request.args.get("message")) == 'filedel':
+        flash('Your file has been deleted', 'file-deleted')
+    elif str(request.args.get("message")) == 'fileshare':
+        flash('Your file has been shared', 'file-share')
+    form = FileOptionsForm()
+    if form.validate_on_submit():
+        if request.form.get('submit_download') == 'Enter':
+            # Pass the users' entered password and the sharer that is
+            # passed using an additional field. [[ form.helper_field.data is the username that shareed ]]
+
+            decrypted_file = app_utils.file_decryption(current_user.username, form.helper_field.data, form.input_field.data)
+
+            return send_from_directory(directory="../" + app.config['UPLOAD_FOLDER'], filename=form.helper_field.data, as_attachment=True)
+    files = User.query.filter_by(id=current_user.id).first()
+    files_shared = files.files_shared
+
+    # Extracting the usernames from the shared files
+    usernames = []
+    for file in files_shared:
+        user = User.query.filter_by(id=file.owner_id).first().username
+        usernames.append(user)
+    return render_template('shares.html', files=files_shared, form=form, usernames=usernames)
 
 @app.route("/about")
 def about():
