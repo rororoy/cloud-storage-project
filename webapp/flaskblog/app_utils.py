@@ -33,7 +33,10 @@ def file_encryption(filename, filename_enc, password, username):
     password = password.encode()
     key = hashlib.sha256(password).digest()
     mode = AES.MODE_CBC
-    IV = 'This is an IV016'.encode("utf8")
+    # Generating a random IV
+    IV = os.urandom(16)
+    print('IV: ')
+    print(IV)
     cipher = AES.new(key, mode, IV)
 
     with open(app.config['UPLOAD_FOLDER'] + filename_enc, 'rb') as f:
@@ -43,20 +46,22 @@ def file_encryption(filename, filename_enc, password, username):
     encrypted_file = cipher.encrypt(padded_file)
 
     with open(app.config['TEMPO_STORAGE'] + filename_enc, 'wb') as e:
+        e.write(IV)
         e.write(encrypted_file)
 
 def file_decryption(username, actual_filename, password):
     password = password.encode()
     key = hashlib.sha256(password).digest()
     mode = AES.MODE_CBC
-    IV = 'This is an IV016'.encode("utf8")
-    cipher = AES.new(key, mode, IV)
 
     hashed_filename = str(hashlib.md5((actual_filename).encode()).hexdigest())
     hashed_filename = hashed_filename + '.' + actual_filename.split('.')[1]
 
     with open(app.config['TEMPO_STORAGE'] + hashed_filename, 'rb') as e:
+        IV = e.read(16)
         encrypted_file = e.read()
+
+    cipher = AES.new(key, mode, IV)
 
     with open(app.config['UPLOAD_FOLDER'] + actual_filename.replace(username, ''), 'wb') as f:
         f.write(cipher.decrypt(encrypted_file).rstrip(b'0'))
