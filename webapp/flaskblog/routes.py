@@ -217,4 +217,13 @@ def account():
 @app.route('/admin')
 @login_required
 def admin():
-    return render_template('admin.html', title='Manage')
+    # Will pass: number of files saved,
+    # a dictionary with a name of a user and the number of files he has uploade.
+    number_of_files = db.session.query(Files).count()
+    users_and_files = db.session.query(User)
+
+    users = {"User": "Files"}
+    for row in users_and_files:
+        users[row.username] = len(row.files)
+
+    return render_template('admin.html', title='Manage Site', number_of_files=number_of_files, users=users)

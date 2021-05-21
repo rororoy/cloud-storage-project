@@ -1,4 +1,34 @@
 {% extends "layout.html" %}
 {% block content %}
     <h1>Site Management</h1>
+    <div class="col-md-4">
+      <div class="content-section">
+         Number of total files stored: {{ number_of_files }}
+      </div>
+    </div>
+    <div class="row" style="text-align: center">
+        <div class="col-md-8">
+            <table style="width:100%">
+              {% for username in users %}
+              <tr>
+                <td>
+                  <div class="col-md-12" style="margin-bottom: -21px;">
+                    <div class="content-section">
+                    {{ username }}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="col-md-4" style="margin-bottom: -21 px;">
+                    <div class="content-section">
+                    {{ users[username] }}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+
+              {% endfor %}
+            </table>
+
+        </div>
 {% endblock content %}
