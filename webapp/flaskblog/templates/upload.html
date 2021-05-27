@@ -21,21 +21,21 @@
                 {% endwith %}
                 <div class="col-md-12" style="padding-left:40px">
                     <p style="margin-top: 5px;">Upload your file to the cloud storage system. All files get encrypted with a password before they are stored and the password is only known by you and is not stored anywhere.</p>
-                    {{ dropzone.create(action='upload') }}
+                    {{ dropzone.create(action='files.upload') }}
                     {{ dropzone.load_js() }}
-                    {{ dropzone.config(redirect_url=url_for('uploadendpoint')) }}
+                    {{ dropzone.config(redirect_url=url_for('files.uploadendpoint')) }}
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="content-section">
                     <ul class="list-group">
-                        <a href="/home" style="text-decoration:none;">
+                        <a href="{{ url_for('files.home') }}" style="text-decoration:none;">
                             <li class="list-group-item list-group-item-light">My Files</li>
                         </a>
-                        <a href="/shares" style="text-decoration:none;">
+                        <a href="{{ url_for('files.shares') }}" style="text-decoration:none;">
                             <li class="list-group-item list-group-item-light">Shared Files</li>
                         </a>
-                        <a href="/upload" style="text-decoration: none;">
+                        <a href="{{ url_for('files.upload') }}" style="text-decoration: none;">
                             <li class="list-group-item list-group-item-light">Upload</li>
                         </a>
                     </ul>

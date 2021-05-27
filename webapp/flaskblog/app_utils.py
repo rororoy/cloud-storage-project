@@ -1,12 +1,13 @@
 from Crypto.Cipher import AES
-from flaskblog import app
 import hashlib
 from werkzeug.utils import secure_filename
 import os.path
 import os
 import hashlib
+from flask import current_app
 
 def check_filename(username, filename):
+    print(os.getcwd())
     # The function returns a name for the file that isnt already used in the temporary storage folder.
     # File name policy: duplicates will have a (1)/(2)/.. appended to them
     filename = secure_filename(filename)
@@ -15,7 +16,8 @@ def check_filename(username, filename):
     hashed_filename = hashlib.md5((username + filename.split('.')[0] + file_addition + '.' + filename.split('.')[1]).encode())
     hashed_filename = str(hashed_filename.hexdigest()) + '.' + filename.split('.')[1]
     true_filename = filename.split('.')[0] + file_addition + '.' + filename.split('.')[1]
-    while os.path.isfile(app.config['TEMPO_STORAGE'] + hashed_filename):
+
+    while os.path.isfile(current_app.config['TEMPO_STORAGE'] + hashed_filename):
         counter += 1
         file_addition = '(' + str(counter) + ')'
         hashed_filename = hashlib.md5((username +  filename.split('.')[0] + file_addition + '.' + filename.split('.')[1]).encode())
@@ -35,17 +37,15 @@ def file_encryption(filename, filename_enc, password, username):
     mode = AES.MODE_CBC
     # Generating a random IV
     IV = os.urandom(16)
-    print('IV: ')
-    print(IV)
     cipher = AES.new(key, mode, IV)
 
-    with open(app.config['UPLOAD_FOLDER'] + filename_enc, 'rb') as f:
+    with open(current_app.config['UPLOAD_FOLDER'] + filename_enc, 'rb') as f:
         original_file = f.read()
 
     padded_file = pad_file(original_file)
     encrypted_file = cipher.encrypt(padded_file)
 
-    with open(app.config['TEMPO_STORAGE'] + filename_enc, 'wb') as e:
+    with open(current_app.config['TEMPO_STORAGE'] + filename_enc, 'wb') as e:
         e.write(IV)
         e.write(encrypted_file)
 
@@ -57,13 +57,13 @@ def file_decryption(username, actual_filename, password):
     hashed_filename = str(hashlib.md5((actual_filename).encode()).hexdigest())
     hashed_filename = hashed_filename + '.' + actual_filename.split('.')[1]
 
-    with open(app.config['TEMPO_STORAGE'] + hashed_filename, 'rb') as e:
+    with open(current_app.config['TEMPO_STORAGE'] + hashed_filename, 'rb') as e:
         IV = e.read(16)
         encrypted_file = e.read()
 
     cipher = AES.new(key, mode, IV)
 
-    with open(app.config['UPLOAD_FOLDER'] + actual_filename.replace(username, ''), 'wb') as f:
+    with open(current_app.config['UPLOAD_FOLDER'] + actual_filename.replace(username, ''), 'wb') as f:
         f.write(cipher.decrypt(encrypted_file).rstrip(b'0'))
 
     return cipher.decrypt(encrypted_file).rstrip(b'0')

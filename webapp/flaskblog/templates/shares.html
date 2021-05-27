@@ -38,13 +38,13 @@
         <div class="col-md-4">
             <div class="content-section">
                 <ul class="list-group">
-                    <a href="/home" style="text-decoration:none;">
+                    <a href="{{ url_for('files.home') }}" style="text-decoration:none;">
                         <li class="list-group-item list-group-item-light">My Files</li>
                     </a>
-                    <a href="/shares" style="text-decoration:none;">
+                    <a href="{{ url_for('files.shares') }}" style="text-decoration:none;">
                         <li class="list-group-item list-group-item-light">Shared Files</li>
                     </a>
-                    <a href="/upload" style="text-decoration: none;">
+                    <a href="{{ url_for('files.upload') }}" style="text-decoration: none;">
                         <li class="list-group-item list-group-item-light">Upload</li>
                     </a>
                 </ul>

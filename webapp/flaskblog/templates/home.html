@@ -10,9 +10,10 @@
         <p style="margin-top:80px;font-size:27px;color:#deeffc;">Securely store your files on the cloud with encryption of files before they are uploaded to the system,
             insuring no one but you can access them. Manage your files easily and share them with other users.
         </p>
-        <a href="/register" style="font-size:27px;color:#deeffc;text-decoration:none;font-weight: bold;">Join today and start using the cloud freely</a>
+        <a href="{{ url_for('users.register') }}" style="font-size:27px;color:#deeffc;text-decoration:none;font-weight: bold;">Join today and start using the cloud freely</a>
     </div>
 </body>
+
 {% else %}
 
 <main role="main" class="container" style="margin-top:10%;">
@@ -52,13 +53,13 @@
         <div class="col-md-4">
             <div class="content-section">
                 <ul class="list-group">
-                    <a href="/home" style="text-decoration:none;">
+                    <a href="{{ url_for('files.home') }}" style="text-decoration:none;">
                         <li class="list-group-item list-group-item-light">My Files</li>
                     </a>
-                    <a href="/shares" style="text-decoration:none;">
+                    <a href="{{ url_for('files.shares') }}" style="text-decoration:none;">
                         <li class="list-group-item list-group-item-light">Shared Files</li>
                     </a>
-                    <a href="/upload" style="text-decoration: none;">
+                    <a href="{{ url_for('files.upload') }}" style="text-decoration: none;">
                         <li class="list-group-item list-group-item-light">Upload</li>
                     </a>
                 </ul>
@@ -93,7 +94,7 @@
                     {{ form.submit_delete(class="btn btn-outline-info", value="Confirm", id="input_submit_delete") }}
 
                     <div style="overflow: hidden; padding-right: .5em;">
-                      
+
                       {% if form.input_field.errors %}
                       {{ form.input_field(class="form-control form-control-lg is-invalid", id="input_field") }}
                       <div class="invalid-feedback">

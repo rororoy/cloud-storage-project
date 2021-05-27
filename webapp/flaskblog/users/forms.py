@@ -1,9 +1,10 @@
-from flask_login import current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, ValidationError
-from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp
-import re
+from flask_wtf.file import FileField, FileAllowed
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Regexp
+from flask_login import current_user
 from flaskblog.models import User
+import re
 
 class PasswordStrength(object):
     def __init__(self, message=None):
@@ -66,15 +67,3 @@ class UpdateAccountCredsForm(FlaskForm):
             email = User.query.filter_by(email=email.data).first()
             if email:
                 raise ValidationError('This email is already registered')
-
-
-class UploadForm(FlaskForm):
-    password = PasswordField('',  validators=[DataRequired(), Length(min=8, max=32, message='Password length should be between 8 characters and 32.')])
-    submit = SubmitField('Submit')
-
-class FileOptionsForm(FlaskForm):
-    helper_field = StringField('Helper')
-    input_field = StringField('Field', validators=[DataRequired()])
-    submit_download = SubmitField('Download')
-    submit_share = SubmitField('Share')
-    submit_delete = SubmitField('Delete')

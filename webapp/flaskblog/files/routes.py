@@ -1,19 +1,19 @@
-from flask import render_template, url_for, flash, redirect, flash, request, Response, send_from_directory
-from flaskblog import app, db, bcrypt
-from flaskblog.models import User, Files
-from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountCredsForm, UploadForm, FileOptionsForm
-from flask_login import login_user, current_user, logout_user, login_required
+from flask import (render_template, url_for, flash, current_app,
+                   redirect, request, abort, Blueprint, send_from_directory)
+from flask_login import current_user, login_required
+from flaskblog import db
+from flaskblog.models import Files, User
+from flaskblog.files.forms import UploadForm, FileOptionsForm, RegistrationForm
 import os
 from flaskblog import app_utils
-from time import sleep
-from datetime import datetime
-import magic
+
+files = Blueprint('files', __name__)
 
 temp_file = None
 temp_file_enc = None
 
-@app.route("/", methods=['GET', 'POST'])
-@app.route("/home", methods=['GET', 'POST'])
+@files.route("/", methods=['GET', 'POST'])
+@files.route("/home", methods=['GET', 'POST'])
 def home():
     # dict.session.pop('_flashes', None)
     if str(request.args.get("message")) == 'filedel':
@@ -31,12 +31,12 @@ def home():
             # chunk_size=512
             # chunks = [decrypted_file[i:i+chunk_size] for i in range(0, len(decrypted_file), chunk_size)]
             # mime = magic.Magic(mime=True)
-            # file_mimetype = mime.from_file(app.config['TEMPO_STORAGE'] + form.helper_field.data) # 'application/pdf'
+            # file_mimetype = mime.from_file(current_current_app.config['TEMPO_STORAGE'] + form.helper_field.data) # 'application/pdf'
             # file_mimetype = app_utils.mime_content_type(form.helper_field.data)
             # return Response(app_utils.generate_file_chunks(chunks), mimetype=file_mimetype)
 
             # TODO FILES STAYS IN THE TEMPORARY STORAGE. ACTUALLY STREAMING NEEDS FIXING
-            return send_from_directory(directory="../" + app.config['UPLOAD_FOLDER'], filename=form.helper_field.data, as_attachment=True)
+            return send_from_directory(directory="../" + current_app.config['UPLOAD_FOLDER'], filename=form.helper_field.data, as_attachment=True)
 
         # CURRENTLY DISABLED
         elif request.form.get('submit_share') == 'Submit':
@@ -66,8 +66,8 @@ def home():
 
                 db.session.delete(requested_file)
                 db.session.commit()
-                os.remove(os.path.join(app.config['TEMPO_STORAGE'], requested_file.actual_filename))
-                return redirect(url_for('redirection', message="filedel"))
+                os.remove(os.path.join(current_app.config['TEMPO_STORAGE'], requested_file.actual_filename))
+                return redirect(url_for('files.redirection', message="filedel"))
                 # flash('Your file has been deleted', 'success')
             else:
                 flash('File name does not match', 'danger')
@@ -81,13 +81,13 @@ def home():
 
     return render_template('home.html', title='Home', form=form)
 
-@app.route("/redirection", methods=['GET', 'POST'])
+@files.route("/redirection", methods=['GET', 'POST'])
 @login_required
 def redirection():
     message = str(request.args.get("message"))
-    return redirect(url_for('home', message=message))
+    return redirect(url_for('files.home', message=message))
 
-@app.route("/upload", methods=['GET', 'POST'])
+@files.route("/upload", methods=['GET', 'POST'])
 @login_required
 def upload():
     global temp_file
@@ -104,13 +104,12 @@ def upload():
         if file:
             temp_file_enc, temp_file = app_utils.check_filename(current_user.username, file.filename)
             # temp_file = file.filename
-            print(temp_file_enc)
-
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], temp_file_enc))
+            file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], temp_file_enc))
+            print(os.getcwd())
             return render_template('upload.html', title='Upload', form=form, password_request="True")
     return render_template('upload.html', title='Upload', form=form, password_request="False")
 
-@app.route("/uploadendpoint", methods=['GET', 'POST'])
+@files.route("/uploadendpoint", methods=['GET', 'POST'])
 @login_required
 def uploadendpoint():
     global temp_file
@@ -123,15 +122,15 @@ def uploadendpoint():
         # app_utils.file_encryption(temp_file, hashed_password)
         app_utils.file_encryption(temp_file, temp_file_enc, form.password.data, current_user.username)
         # Remove temp file after encryption is done and the real final file is stored
-        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], temp_file_enc))
+        os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], temp_file_enc))
 
         new_file = Files(filename=str(temp_file), actual_filename=temp_file_enc, owner=current_user)
         db.session.add(new_file)
         db.session.commit()
-        return redirect(url_for('home'))
+        return redirect(url_for('files.home'))
     return render_template('upload.html', title='Upload', form=form, password_request="True")
 
-@app.route("/shares", methods=['GET', 'POST'])
+@files.route("/shares", methods=['GET', 'POST'])
 @login_required
 def shares():
     if str(request.args.get("message")) == 'filedel':
@@ -146,7 +145,7 @@ def shares():
 
             decrypted_file = app_utils.file_decryption(current_user.username, form.helper_field.data, form.input_field.data)
 
-            return send_from_directory(directory="../" + app.config['UPLOAD_FOLDER'], filename=form.helper_field.data, as_attachment=True)
+            return send_from_directory(directory="../" + current_current_app.config['UPLOAD_FOLDER'], filename=form.helper_field.data, as_attachment=True)
     files = User.query.filter_by(id=current_user.id).first()
     files_shared = files.files_shared
 
@@ -156,74 +155,3 @@ def shares():
         user = User.query.filter_by(id=file.owner_id).first().username
         usernames.append(user)
     return render_template('shares.html', files=files_shared, form=form, usernames=usernames)
-
-@app.route("/about")
-def about():
-    return render_template('about.html', title='About')
-
-@app.route("/login", methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
-    form = LoginForm()
-
-    # Validate user and login
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
-            # Previous page the user was trying to access requiring login
-            prev_page = request.args.get('next')
-            return redirect(prev_page) if prev_page else redirect(url_for('home'))
-        else:
-            flash('Login Unsuccessful. Please check username and password', 'danger')
-    return render_template('login.html', title='Login', form=form)
-
-@app.route('/register', methods=['POST', 'GET'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
-    form = RegistrationForm()
-    if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        created_user = User(username=form.username.data, email=form.email.data, password=hashed_password)
-        db.session.add(created_user)
-        db.session.commit()
-        flash(f'Account created successfully', 'success')
-        return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
-
-
-@app.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('home'))
-
-@app.route("/account", methods=['GET', 'POST'])
-@login_required
-def account():
-    form = UpdateAccountCredsForm()
-    if form.validate_on_submit():
-        current_user.username = form.username.data
-        current_user.email = form.email.data
-        db.session.commit()
-        flash('Your account has been updated successfully', 'success')
-        return redirect(url_for('account'))
-    elif request.method == 'GET':
-        form.username.data = current_user.username
-        form.email.data = current_user.email
-    return render_template('account.html', title='Account', form=form)
-
-@app.route('/admin')
-@login_required
-def admin():
-    # Will pass: number of files saved,
-    # a dictionary with a name of a user and the number of files he has uploade.
-    number_of_files = db.session.query(Files).count()
-    users_and_files = db.session.query(User)
-
-    users = {"User": "Files"}
-    for row in users_and_files:
-        users[row.username] = len(row.files)
-
-    return render_template('admin.html', title='Manage Site', number_of_files=number_of_files, users=users)
